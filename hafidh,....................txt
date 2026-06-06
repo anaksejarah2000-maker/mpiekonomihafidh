@@ -1,0 +1,905 @@
+import { useState, useEffect, useRef } from "react";
+
+// ============================================================
+// DESIGN TOKENS
+// ============================================================
+const C = {
+  primary: "#0A3D62",
+  primaryMid: "#1565A8",
+  primaryLight: "#D6E8F7",
+  accent: "#F4A025",
+  accentLight: "#FEF3D7",
+  green: "#1A7F4B",
+  greenLight: "#D4EDDA",
+  red: "#C0392B",
+  redLight: "#FDECEA",
+  purple: "#6C3483",
+  purpleLight: "#E8D5F5",
+  bg: "#F0F5FB",
+  white: "#FFFFFF",
+  text: "#1A2332",
+  textMuted: "#5A6B7A",
+  border: "#C8D8E8",
+  cardShadow: "0 2px 12px rgba(10,61,98,0.09)",
+};
+
+// ============================================================
+// MATERI DATA (lengkap dari PDF)
+// ============================================================
+const MATERI = {
+  bank: {
+    id: "bank",
+    judul: "Bank",
+    emoji: "🏦",
+    warna: C.primary,
+    topik: [
+      {
+        id: "def-bank",
+        judul: "Definisi Bank",
+        isi: [
+          { tipe: "paragraf", teks: "Bank adalah badan usaha yang menghimpun dana dari masyarakat dalam bentuk simpanan dan menyalurkannya kepada masyarakat dalam rangka meningkatkan taraf hidup rakyat banyak." },
+          { tipe: "info-box", warna: C.primaryLight, border: C.primaryMid, teks: "💡 Peran utama bank: menjadi perantara antara pihak yang kelebihan dana (surplus) dengan pihak yang kekurangan dana (defisit)." },
+          { tipe: "diagram", label1: "Masyarakat (Surplus)", panah: "⟶ BANK ⟶", label2: "Masyarakat (Defisit)" },
+        ],
+        ringkasan: "Bank = penghimpun + penyalur dana masyarakat untuk meningkatkan taraf hidup rakyat.",
+      },
+      {
+        id: "jenis-fungsi",
+        judul: "Jenis Bank Berdasarkan Fungsi",
+        isi: [
+          { tipe: "subjudul", teks: "1. Bank Sentral (Bank Indonesia)" },
+          { tipe: "paragraf", teks: "Berfungsi sebagai bank sirkulasi dan induk dari bank-bank lain (banker of banks). Berdasarkan UU No. 13 Tahun 1999, tujuan BI adalah mencapai dan memelihara kestabilan nilai rupiah." },
+          { tipe: "list", judul: "Tugas Bank Indonesia:", item: ["Mengeluarkan alat pembayaran yang sah – memiliki hak monopoli mengedarkan uang kertas dan logam", "Menetapkan dan melaksanakan kebijakan moneter – mengendalikan jumlah uang beredar", "Mengatur dan menjaga kelancaran sistem pembayaran – memberikan izin penyelenggaraan jasa pembayaran"] },
+          { tipe: "subjudul", teks: "2. Bank Umum" },
+          { tipe: "paragraf", teks: "Badan usaha yang menghimpun dana dalam bentuk tabungan, deposito, dan giro, lalu menyalurkannya dalam bentuk kredit/pembiayaan serta menyediakan jasa keuangan." },
+          { tipe: "list", judul: "Fungsi Bank Umum:", item: ["Penghimpun dana: Tabungan (dapat ditarik kapan saja), Deposito (jangka waktu tertentu), Giro (ditarik dengan cek/bilyet giro)", "Penyalur dana: KPR, Kredit Modal Kerja, Kredit Investasi, Kartu Kredit", "Penyedia jasa: Transfer (ATM, Internet Banking, Mobile Banking), Safe Deposit Box, pembayaran tagihan"] },
+          { tipe: "subjudul", teks: "3. Bank Perkreditan Rakyat (BPR)" },
+          { tipe: "paragraf", teks: "Bank yang menerima simpanan hanya dalam bentuk deposito berjangka dan tabungan." },
+          { tipe: "dua-kolom", kiri: { judul: "✅ Boleh Dilakukan BPR", item: ["Menghimpun tabungan & deposito", "Menyalurkan kredit/pinjaman", "Pembiayaan berdasarkan bagi hasil", "Menempatkan dana di SBI/bank lain"], warna: C.greenLight, border: C.green }, kanan: { judul: "❌ Dilarang untuk BPR", item: ["Menerima simpanan berupa giro", "Penyertaan modal", "Membuka usaha asuransi"], warna: C.redLight, border: C.red } },
+        ],
+        ringkasan: "3 jenis berdasarkan fungsi: Bank Sentral (BI), Bank Umum, dan BPR. BPR tidak boleh menerima giro, penyertaan modal, dan asuransi.",
+      },
+      {
+        id: "jenis-kepemilikan",
+        judul: "Jenis Bank Berdasarkan Kepemilikan",
+        isi: [
+          { tipe: "tiga-kartu", kartu: [
+            { judul: "🏛️ Bank Pemerintah", sub: "Pemerintah Pusat", item: ["Bank Mandiri", "Bank Rakyat Indonesia (BRI)", "Bank Negara Indonesia (BNI)", "Bank Tabungan Negara (BTN)", "Bank Syariah Indonesia (BSI)"], sub2: "Pemerintah Daerah", item2: ["Bank DKI", "Bank Jabar Banten (BJB)", "Bank Jatim", "Bank Nagari", "Bank Papua"], warna: C.primaryLight, border: C.primary },
+            { judul: "🏢 Bank Swasta", item: ["Bank Central Asia (BCA)", "Bank CIMB Niaga", "Bank Danamon Indonesia", "Bank Permata", "Bank OCBC NISP", "Bank Mega", "Bank Panin"], warna: C.purpleLight, border: C.purple },
+            { judul: "🌐 Bank Asing", item: ["HSBC (Inggris/Hongkong)", "Citibank (Amerika Serikat)", "Maybank (Malaysia)", "Hana Bank (Korea)"], warna: C.accentLight, border: C.accent },
+          ]},
+        ],
+        ringkasan: "3 kepemilikan: Bank Pemerintah (Pusat & Daerah), Bank Swasta, Bank Asing.",
+      },
+      {
+        id: "jenis-prinsip",
+        judul: "Jenis Bank Berdasarkan Prinsip Operasional",
+        isi: [
+          { tipe: "perbandingan", kiri: { judul: "🏦 Bank Konvensional", warna: C.primaryLight, border: C.primaryMid, item: ["Berinvestasi pada usaha halal maupun haram", "Berdasarkan sistem bunga", "Besaran bunga tetap", "Profit oriented (dunia)", "Pola hubungan: Debitur-Kreditur", "Tidak ada pengawasan syariah"] }, kanan: { judul: "☪️ Bank Syariah", warna: C.greenLight, border: C.green, item: ["Hanya berinvestasi pada usaha halal", "Berdasarkan sistem bagi hasil, margin, dan fee", "Besaran bagi hasil berubah sesuai kinerja", "Profit dan falah oriented (dunia & akhirat)", "Pola hubungan: Kemitraan", "Ada Dewan Pengawas Syariah (DPS)"] } },
+        ],
+        ringkasan: "Bank Konvensional menggunakan sistem bunga tetap. Bank Syariah menggunakan bagi hasil dan diawasi Dewan Pengawas Syariah.",
+      },
+    ],
+  },
+  iknb: {
+    id: "iknb",
+    judul: "Industri Keuangan Non-Bank (IKNB)",
+    emoji: "📊",
+    warna: C.purple,
+    topik: [
+      {
+        id: "def-iknb",
+        judul: "Definisi IKNB",
+        isi: [
+          { tipe: "paragraf", teks: "Industri Keuangan Non-Bank (IKNB) adalah lembaga yang menyelenggarakan aktivitas keuangan berupa penghimpunan dana dari masyarakat lalu menyalurkannya untuk kegiatan investasi di perusahaan serta menerbitkan surat berharga." },
+          { tipe: "info-box", warna: C.purpleLight, border: C.purple, teks: "💡 IKNB melengkapi perbankan dalam ekosistem keuangan Indonesia, memberikan akses layanan keuangan yang lebih beragam kepada masyarakat." },
+          { tipe: "list", judul: "Jenis-jenis IKNB:", item: ["Pasar Modal", "Koperasi", "Perusahaan Asuransi", "Pegadaian", "Perusahaan Sewa Guna Usaha (Leasing)", "Financial Technology (Fintech)", "Perusahaan Dana Pensiun"] },
+        ],
+        ringkasan: "IKNB = lembaga keuangan di luar bank yang mengelola investasi, menerbitkan surat berharga, dan melengkapi layanan perbankan.",
+      },
+      {
+        id: "pasar-modal",
+        judul: "Pasar Modal",
+        isi: [
+          { tipe: "paragraf", teks: "Pasar modal adalah tempat bertemunya pihak yang membutuhkan dana (emiten/perusahaan) dan pihak yang memiliki dana (investor) melalui perdagangan instrumen keuangan jangka panjang, seperti saham dan obligasi." },
+          { tipe: "dua-kolom", kiri: { judul: "📈 Saham", item: ["Tanda kepemilikan/penyertaan pada perusahaan", "Memberikan hak atas dividen", "Memberikan hak suara dalam RUPS", "Diperdagangkan di Bursa Efek Indonesia (BEI)"], warna: C.greenLight, border: C.green }, kanan: { judul: "📋 Obligasi", item: ["Surat utang jangka panjang", "Diterbitkan perusahaan/pemerintah kepada investor", "Memberikan bunga (kupon) secara periodik", "Pokok dikembalikan saat jatuh tempo"], warna: C.primaryLight, border: C.primaryMid } },
+          { tipe: "list", judul: "Lembaga terkait Pasar Modal:", item: ["Bursa Efek Indonesia (BEI/IDX) – tempat perdagangan saham & obligasi", "OJK – mengawasi seluruh kegiatan pasar modal", "Kustodian Sentral Efek Indonesia (KSEI) – penyimpanan efek"] },
+        ],
+        ringkasan: "Pasar modal mempertemukan emiten & investor melalui saham (kepemilikan) dan obligasi (surat utang).",
+      },
+      {
+        id: "koperasi-asuransi",
+        judul: "Koperasi, Asuransi & Pegadaian",
+        isi: [
+          { tipe: "subjudul", teks: "🤝 Koperasi" },
+          { tipe: "paragraf", teks: "Koperasi adalah badan usaha otonom yang dimiliki dan dikelola oleh anggota secara sukarela untuk meningkatkan kesejahteraan bersama berdasarkan asas kekeluargaan. Berlandaskan UU No. 25 Tahun 1992, koperasi menjalankan prinsip ekonomi demokratis: satu anggota satu suara." },
+          { tipe: "subjudul", teks: "🛡️ Perusahaan Asuransi" },
+          { tipe: "paragraf", teks: "Asuransi adalah perjanjian kontrak antara nasabah (tertanggung) dan perusahaan asuransi (penanggung), di mana nasabah membayar premi untuk mendapatkan perlindungan finansial atas risiko kerugian tak terduga." },
+          { tipe: "list", judul: "Komponen utama asuransi:", item: ["Premi – iuran/pembayaran berkala oleh nasabah kepada perusahaan asuransi", "Polis – dokumen perjanjian resmi yang memuat hak dan kewajiban kedua pihak", "Klaim – pengajuan ganti rugi oleh tertanggung saat risiko terjadi", "Risiko yang ditanggung: sakit, kecelakaan, kematian, kebakaran, dll."] },
+          { tipe: "subjudul", teks: "🏪 Pegadaian" },
+          { tipe: "paragraf", teks: "Pegadaian adalah lembaga keuangan non-bank milik negara (BUMN/anak usaha BRI) yang menyediakan solusi pinjaman cepat dengan jaminan barang bergerak atau tidak bergerak, serta layanan investasi emas. Melayani kebutuhan dana tunai masyarakat menengah ke bawah." },
+        ],
+        ringkasan: "Koperasi (asas kekeluargaan), Asuransi (perlindungan risiko dengan premi & polis), Pegadaian (pinjaman tunai dengan jaminan barang).",
+      },
+      {
+        id: "leasing-fintech-pensiun",
+        judul: "Leasing, Fintech & Dana Pensiun",
+        isi: [
+          { tipe: "subjudul", teks: "🚗 Leasing (Sewa Guna Usaha)" },
+          { tipe: "paragraf", teks: "Leasing adalah pembiayaan barang modal atau aset oleh perusahaan pembiayaan (lessor) kepada pengguna (lessee) dengan cicilan berkala. Memungkinkan penggunaan barang tanpa modal besar di awal." },
+          { tipe: "list", judul: "Opsi di akhir kontrak leasing:", item: ["Membeli aset dengan harga yang telah disepakati", "Memperpanjang masa sewa", "Mengembalikan aset kepada lessor"] },
+          { tipe: "dua-kolom", kiri: { judul: "Lessor", item: ["Pihak yang memberikan pembiayaan", "Pemilik aset selama masa leasing", "Contoh: perusahaan pembiayaan (FIF, Adira, dll.)"], warna: C.primaryLight, border: C.primaryMid }, kanan: { judul: "Lessee", item: ["Pihak yang menerima pembiayaan", "Pengguna aset selama masa leasing", "Wajib membayar cicilan berkala"], warna: C.accentLight, border: C.accent } },
+          { tipe: "subjudul", teks: "💳 Financial Technology (Fintech)" },
+          { tipe: "paragraf", teks: "Fintech adalah inovasi di industri jasa keuangan yang memanfaatkan teknologi digital untuk membuat layanan keuangan lebih praktis, efisien, dan inklusif tanpa perlu tatap muka fisik." },
+          { tipe: "list", judul: "Jenis-jenis Fintech:", item: ["Pembayaran/Dompet Digital: GoPay, OVO, Dana, Flip", "Pinjaman Online (P2P Lending): Modalku, Amartha, Kredit Pintar, JULO", "Manajemen Investasi: Bibit, Cermati, CekAja", "CrowdFunding (Patungan Dana): Kitabisa"] },
+          { tipe: "subjudul", teks: "🧓 Dana Pensiun" },
+          { tipe: "paragraf", teks: "Dana Pensiun adalah badan hukum yang mengelola dan menjalankan program yang menjanjikan manfaat pensiun bagi peserta setelah memasuki usia pensiun. Tujuannya memberikan jaminan kesejahteraan di masa purna tugas." },
+        ],
+        ringkasan: "Leasing = cicil aset tanpa modal besar (lessor vs lessee). Fintech = layanan keuangan digital. Dana Pensiun = tabungan hari tua.",
+      },
+    ],
+  },
+  pengawas: {
+    id: "pengawas",
+    judul: "Lembaga Pengawas & Penjamin",
+    emoji: "🛡️",
+    warna: C.green,
+    topik: [
+      {
+        id: "ojk",
+        judul: "Otoritas Jasa Keuangan (OJK)",
+        isi: [
+          { tipe: "paragraf", teks: "OJK adalah lembaga independen yang berfungsi menyelenggarakan sistem pengaturan dan pengawasan yang terintegrasi terhadap keseluruhan kegiatan di dalam sektor jasa keuangan." },
+          { tipe: "list", judul: "🎯 Tujuan OJK:", item: ["Terselenggara secara teratur, adil, transparan, dan akuntabel", "Mewujudkan sistem keuangan yang tumbuh secara berkelanjutan dan stabil", "Melindungi kepentingan konsumen dan masyarakat"] },
+          { tipe: "list", judul: "⚙️ Fungsi OJK:", item: ["Menyelenggarakan pengaturan dan pengawasan terintegrasi di sektor jasa keuangan", "Memelihara Stabilitas Sistem Keuangan secara aktif", "Memberikan perlindungan terhadap konsumen dan masyarakat"] },
+          { tipe: "list", judul: "📋 Tugas OJK – Mengawasi:", item: ["Perbankan", "Pasar Modal, Keuangan Derivatif, dan Bursa Karbon", "Perasuransian, Penjaminan, dan Dana Pensiun", "Lembaga Pembiayaan, Perusahaan Modal Ventura, Lembaga Keuangan Mikro", "ITSK serta Aset Keuangan Digital dan Aset Kripto", "Perilaku pelaku usaha jasa keuangan & edukasi konsumen", "Sektor keuangan secara terintegrasi (Konglomerasi Keuangan)"] },
+        ],
+        ringkasan: "OJK = lembaga independen pengawas seluruh sektor jasa keuangan Indonesia (perbankan, pasar modal, asuransi, fintech, kripto, dll).",
+      },
+      {
+        id: "lps",
+        judul: "Lembaga Penjamin Simpanan (LPS)",
+        isi: [
+          { tipe: "info-box", warna: "#FFF3CD", border: "#E6A817", teks: "📖 Latar Belakang: LPS lahir dari krisis moneter 1998 yang melanda Asia termasuk Indonesia, ditandai dengan dilikuidasinya 16 bank dan menurunnya kepercayaan masyarakat pada sistem perbankan." },
+          { tipe: "paragraf", teks: "Dalam mengatasi krisis 1998, pemerintah menerapkan Blanket Guarantee (jaminan menyeluruh) melalui Keppres No. 26 Tahun 1998 (Bank Umum) dan Keppres No. 193 Tahun 1998 (BPR)." },
+          { tipe: "list", judul: "⚙️ Fungsi LPS:", item: ["Menjamin simpanan nasabah penyimpan di bank", "Menjamin polis asuransi", "Turut aktif memelihara stabilitas sistem perbankan", "Melakukan resolusi bank yang bermasalah", "Menyelesaikan permasalahan perusahaan asuransi yang dicabut izin usahanya oleh OJK"] },
+          { tipe: "info-box", warna: C.greenLight, border: C.green, teks: "🔐 Dengan adanya LPS, masyarakat dapat menyimpan uang di bank dengan tenang karena simpanan mereka dijamin oleh negara." },
+        ],
+        ringkasan: "LPS dibentuk pasca krisis 1998 untuk menjamin simpanan nasabah, menjamin polis asuransi, dan menjaga stabilitas perbankan nasional.",
+      },
+    ],
+  },
+};
+
+// ============================================================
+// KUIS DATA (dari materi lengkap)
+// ============================================================
+const KUIS_DATA = [
+  {
+    id: 1,
+    soal: "Bank yang berfungsi sebagai bank sirkulasi dan memiliki hak monopoli untuk mencetak serta mengedarkan uang kartal sebagai alat pembayaran yang sah adalah...",
+    pilihan: ["Bank Umum", "Bank Perkreditan Rakyat", "Bank Sentral (Bank Indonesia)", "Bank Syariah"],
+    benar: 2,
+    penjelasan: "Bank Indonesia sebagai Bank Sentral memiliki hak monopoli mengedarkan uang kertas dan logam. Berdasarkan UU No. 13 Tahun 1999, tujuan BI adalah mencapai dan memelihara kestabilan nilai rupiah.",
+  },
+  {
+    id: 2,
+    soal: "Manakah kegiatan yang DILARANG dijalankan oleh Bank Perkreditan Rakyat (BPR) berdasarkan regulasi yang berlaku?",
+    pilihan: ["Menghimpun dana dalam bentuk tabungan", "Menyalurkan dana dalam bentuk kredit/pinjaman", "Menerima simpanan dalam bentuk Giro", "Menyediakan pembiayaan berdasarkan prinsip bagi hasil"],
+    benar: 2,
+    penjelasan: "BPR dilarang: (1) Menerima simpanan berupa Giro, (2) Penyertaan modal, (3) Membuka usaha asuransi. BPR hanya boleh menghimpun tabungan dan deposito.",
+  },
+  {
+    id: 3,
+    soal: "Perusahaan pembiayaan barang modal yang disebut 'lessor' memberikan aset kepada pengguna ('lessee') dengan pembayaran cicilan berkala. Kegiatan ini disebut...",
+    pilihan: ["Fintech", "Pegadaian", "Dana Pensiun", "Leasing (Sewa Guna Usaha)"],
+    benar: 3,
+    penjelasan: "Leasing (Sewa Guna Usaha) adalah pembiayaan aset oleh lessor kepada lessee dengan cicilan berkala. Di akhir kontrak, lessee dapat memilih: membeli, memperpanjang, atau mengembalikan aset.",
+  },
+  {
+    id: 4,
+    soal: "OJK (Otoritas Jasa Keuangan) adalah lembaga independen pengawas sektor jasa keuangan. Manakah yang TIDAK termasuk cakupan pengawasan OJK?",
+    pilihan: ["Perbankan dan Pasar Modal", "Asuransi dan Dana Pensiun", "Fintech dan Aset Kripto", "Pemerintah Daerah dan APBD"],
+    benar: 3,
+    penjelasan: "OJK mengawasi: Perbankan, Pasar Modal, Asuransi, Dana Pensiun, Lembaga Pembiayaan, Fintech, Aset Kripto, dll. Pemerintah Daerah dan APBD bukan merupakan bagian dari sektor jasa keuangan yang diawasi OJK.",
+  },
+  {
+    id: 5,
+    soal: "LPS (Lembaga Penjamin Simpanan) dibentuk sebagai respons atas krisis moneter yang terjadi pada tahun...",
+    pilihan: ["1945", "1965", "1998", "2008"],
+    benar: 2,
+    penjelasan: "LPS lahir dari krisis moneter 1998 yang menyebabkan dilikuidasinya 16 bank. Pemerintah saat itu menerapkan blanket guarantee melalui Keppres No. 26 & 193 Tahun 1998.",
+  },
+  {
+    id: 6,
+    soal: "Dalam asuransi, dokumen perjanjian resmi antara nasabah (tertanggung) dan perusahaan asuransi (penanggung) yang memuat hak dan kewajiban kedua pihak disebut...",
+    pilihan: ["Premi", "Klaim", "Polis", "Deposito"],
+    benar: 2,
+    penjelasan: "Polis adalah dokumen perjanjian resmi dalam asuransi yang memuat hak dan kewajiban. Premi adalah iuran yang dibayarkan nasabah, sedangkan klaim adalah pengajuan ganti rugi saat risiko terjadi.",
+  },
+  {
+    id: 7,
+    soal: "Koperasi menganut prinsip ekonomi demokratis berdasarkan UU No. 25 Tahun 1992. Prinsip tersebut adalah...",
+    pilihan: ["Satu anggota satu suara", "Saham terbanyak paling berkuasa", "Keuntungan sebesar-besarnya", "Satu anggota satu saham"],
+    benar: 0,
+    penjelasan: "Koperasi menjalankan prinsip ekonomi demokratis: satu anggota satu suara, tidak tergantung besar kecilnya modal. Koperasi bukan semata-mata mencari keuntungan, melainkan memenuhi kebutuhan anggota.",
+  },
+  {
+    id: 8,
+    soal: "Perbedaan utama antara Bank Syariah dan Bank Konvensional adalah...",
+    pilihan: [
+      "Bank Syariah hanya boleh dimiliki oleh pemerintah",
+      "Bank Konvensional tidak boleh memberikan kredit",
+      "Bank Syariah beroperasi berdasarkan bagi hasil dan diawasi Dewan Pengawas Syariah",
+      "Bank Syariah tidak boleh menerima tabungan dari nasabah",
+    ],
+    benar: 2,
+    penjelasan: "Bank Syariah beroperasi berdasarkan sistem bagi hasil/margin/fee (bukan bunga), hanya berinvestasi pada usaha halal, pola hubungan adalah kemitraan, dan diawasi oleh Dewan Pengawas Syariah (DPS).",
+  },
+  {
+    id: 9,
+    soal: "Fintech yang berfokus pada pengumpulan dana dari banyak orang untuk membantu orang lain yang membutuhkan disebut...",
+    pilihan: ["Dompet Digital", "P2P Lending", "CrowdFunding", "Manajemen Investasi"],
+    benar: 2,
+    penjelasan: "CrowdFunding (Patungan Dana) seperti Kitabisa adalah platform yang mengumpulkan dana dari banyak orang (crowd) untuk membantu pihak yang membutuhkan. P2P Lending adalah pinjaman online antarpihak.",
+  },
+  {
+    id: 10,
+    soal: "Pasar modal mempertemukan pihak yang membutuhkan dana (emiten) dan investor. Instrumen keuangan jangka panjang yang diperdagangkan di pasar modal adalah...",
+    pilihan: ["Tabungan dan Deposito", "Saham dan Obligasi", "Giro dan Cek", "Premi dan Polis"],
+    benar: 1,
+    penjelasan: "Pasar modal memperdagangkan instrumen jangka panjang: Saham (tanda kepemilikan perusahaan, memberikan hak dividen) dan Obligasi (surat utang jangka panjang dengan janji pembayaran kupon dan pokok).",
+  },
+];
+
+// ============================================================
+// GLOSARIUM DATA
+// ============================================================
+const GLOSARIUM = [
+  { istilah: "Bank", def: "Badan usaha yang menghimpun dana dari masyarakat dalam bentuk simpanan dan menyalurkannya untuk meningkatkan taraf hidup rakyat banyak." },
+  { istilah: "Bank Sentral", def: "Bank yang berfungsi sebagai bank sirkulasi dan induk dari bank-bank lain (banker of banks). Di Indonesia adalah Bank Indonesia." },
+  { istilah: "Bank Umum", def: "Bank yang melaksanakan kegiatan usaha secara konvensional atau syariah dan memberikan jasa dalam lalu lintas pembayaran." },
+  { istilah: "BPR", def: "Bank Perkreditan Rakyat – bank yang hanya menerima simpanan berupa deposito berjangka dan tabungan, tidak boleh menerima giro." },
+  { istilah: "Tabungan", def: "Simpanan di bank yang penyetoran dan penarikannya dapat dilakukan kapan saja sesuai syarat yang disepakati." },
+  { istilah: "Deposito", def: "Simpanan di bank yang penyetoran maupun penarikannya hanya dapat dilakukan pada waktu tertentu sesuai perjanjian." },
+  { istilah: "Giro", def: "Simpanan di bank yang dapat ditarik kapan saja menggunakan cek, bilyet giro, atau sarana pemindahbukuan lainnya." },
+  { istilah: "Kredit", def: "Penyediaan uang atau tagihan berdasarkan persetujuan pinjam-meminjam yang wajib dilunasi setelah jangka waktu tertentu dengan imbalan bunga." },
+  { istilah: "IKNB", def: "Industri Keuangan Non-Bank – lembaga keuangan di luar bank yang menghimpun dana dan menyalurkannya untuk investasi serta menerbitkan surat berharga." },
+  { istilah: "Saham", def: "Tanda penyertaan atau kepemilikan seseorang atau badan dalam suatu perusahaan, memberikan hak atas dividen dan suara dalam RUPS." },
+  { istilah: "Obligasi", def: "Surat utang jangka panjang yang diterbitkan perusahaan/pemerintah kepada investor dengan janji pembayaran bunga (kupon) dan pokok pada jatuh tempo." },
+  { istilah: "Emiten", def: "Perusahaan atau pihak yang melakukan Penawaran Umum (IPO) untuk menjual saham atau obligasi kepada masyarakat melalui pasar modal." },
+  { istilah: "Koperasi", def: "Badan usaha otonom yang dimiliki dan dikelola oleh anggota secara sukarela berdasarkan asas kekeluargaan dengan prinsip satu anggota satu suara." },
+  { istilah: "Asuransi", def: "Perjanjian kontrak antara tertanggung dan penanggung; nasabah membayar premi untuk mendapat perlindungan atas risiko kerugian tak terduga." },
+  { istilah: "Premi", def: "Sejumlah uang yang dibayarkan nasabah (tertanggung) kepada perusahaan asuransi (penanggung) sebagai imbalan atas perlindungan risiko." },
+  { istilah: "Polis", def: "Dokumen perjanjian resmi dalam asuransi yang memuat hak dan kewajiban antara tertanggung dan penanggung." },
+  { istilah: "Pegadaian", def: "BUMN (anak usaha BRI) yang menyediakan pinjaman cepat dengan jaminan barang bergerak/tidak bergerak serta layanan investasi emas." },
+  { istilah: "Leasing", def: "Sewa Guna Usaha – pembiayaan barang modal oleh lessor kepada lessee dengan cicilan berkala; di akhir kontrak ada opsi beli, perpanjang, atau kembalikan." },
+  { istilah: "Lessor", def: "Pihak yang memberikan pembiayaan atau pemilik aset dalam perjanjian leasing (sewa guna usaha)." },
+  { istilah: "Lessee", def: "Pihak yang menerima pembiayaan atau pengguna aset dalam perjanjian leasing (sewa guna usaha) yang wajib membayar cicilan." },
+  { istilah: "Fintech", def: "Financial Technology – inovasi keuangan berbasis teknologi digital untuk membuat layanan keuangan lebih praktis, efisien, dan inklusif." },
+  { istilah: "P2P Lending", def: "Peer-to-Peer Lending – jenis fintech pinjaman online yang menghubungkan peminjam langsung dengan pemberi pinjaman tanpa perantara bank." },
+  { istilah: "Dana Pensiun", def: "Badan hukum yang mengelola program yang menjanjikan manfaat pensiun bagi peserta setelah memasuki usia pensiun." },
+  { istilah: "OJK", def: "Otoritas Jasa Keuangan – lembaga negara independen yang mengatur dan mengawasi seluruh sektor jasa keuangan Indonesia secara terintegrasi." },
+  { istilah: "LPS", def: "Lembaga Penjamin Simpanan – badan hukum yang menjamin simpanan nasabah dan polis asuransi, serta menjaga stabilitas sistem perbankan." },
+  { istilah: "Blanket Guarantee", def: "Penjaminan menyeluruh oleh pemerintah atas seluruh kewajiban bank, diterapkan melalui Keppres No. 26 & 193 Tahun 1998 pasca krisis moneter 1998." },
+  { istilah: "Dividen", def: "Bagian keuntungan perusahaan yang dibagikan kepada pemegang saham secara proporsional sesuai jumlah saham yang dimiliki." },
+  { istilah: "KPR", def: "Kredit Pemilikan Rumah – kredit yang diberikan bank untuk membeli rumah dengan jaminan berupa rumah tersebut." },
+];
+
+// ============================================================
+// HELPER: render blok konten
+// ============================================================
+function BlokkKonten({ blok }) {
+  switch (blok.tipe) {
+    case "paragraf":
+      return <p style={{ fontSize: 14, lineHeight: 1.85, color: C.text, margin: "0 0 12px" }}>{blok.teks}</p>;
+    case "subjudul":
+      return <p style={{ fontSize: 15, fontWeight: 700, color: C.primary, margin: "16px 0 6px" }}>{blok.teks}</p>;
+    case "info-box":
+      return (
+        <div style={{ background: blok.warna, border: `1.5px solid ${blok.border}`, borderRadius: 10, padding: "12px 16px", margin: "10px 0 14px", fontSize: 13.5, lineHeight: 1.7, color: C.text }}>
+          {blok.teks}
+        </div>
+      );
+    case "list":
+      return (
+        <div style={{ margin: "10px 0 14px" }}>
+          {blok.judul && <p style={{ fontWeight: 700, fontSize: 13.5, color: C.text, marginBottom: 6 }}>{blok.judul}</p>}
+          <ul style={{ paddingLeft: 18, margin: 0 }}>
+            {blok.item.map((it, i) => (
+              <li key={i} style={{ fontSize: 13.5, lineHeight: 1.8, color: C.text, marginBottom: 3 }}>{it}</li>
+            ))}
+          </ul>
+        </div>
+      );
+    case "diagram":
+      return (
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 12, background: C.primaryLight, borderRadius: 12, padding: "16px 24px", margin: "12px 0", flexWrap: "wrap" }}>
+          <div style={{ background: C.white, border: `2px solid ${C.primaryMid}`, borderRadius: 10, padding: "8px 18px", fontWeight: 700, fontSize: 13, color: C.primary }}>{blok.label1}</div>
+          <span style={{ fontSize: 22, color: C.primaryMid }}>{blok.panah}</span>
+          <div style={{ background: C.white, border: `2px solid ${C.primaryMid}`, borderRadius: 10, padding: "8px 18px", fontWeight: 700, fontSize: 13, color: C.primary }}>{blok.label2}</div>
+        </div>
+      );
+    case "dua-kolom":
+      return (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, margin: "12px 0 16px" }}>
+          {[blok.kiri, blok.kanan].map((sisi, i) => (
+            <div key={i} style={{ background: sisi.warna, border: `1.5px solid ${sisi.border}`, borderRadius: 10, padding: "12px 14px" }}>
+              <p style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 6, color: C.text }}>{sisi.judul}</p>
+              <ul style={{ paddingLeft: 16, margin: 0 }}>
+                {sisi.item.map((it, j) => <li key={j} style={{ fontSize: 13, lineHeight: 1.75, color: C.text, marginBottom: 2 }}>{it}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+      );
+    case "tiga-kartu":
+      return (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 12, margin: "12px 0 16px" }}>
+          {blok.kartu.map((k, i) => (
+            <div key={i} style={{ background: k.warna, border: `1.5px solid ${k.border}`, borderRadius: 10, padding: "12px 14px" }}>
+              <p style={{ fontWeight: 700, fontSize: 13.5, marginBottom: 6, color: C.text }}>{k.judul}</p>
+              {k.sub && <p style={{ fontWeight: 600, fontSize: 12, color: C.textMuted, marginBottom: 4 }}>{k.sub}</p>}
+              <ul style={{ paddingLeft: 14, margin: 0 }}>
+                {k.item.map((it, j) => <li key={j} style={{ fontSize: 12.5, lineHeight: 1.7, color: C.text, marginBottom: 1 }}>{it}</li>)}
+              </ul>
+              {k.sub2 && <p style={{ fontWeight: 600, fontSize: 12, color: C.textMuted, margin: "8px 0 4px" }}>{k.sub2}</p>}
+              {k.item2 && <ul style={{ paddingLeft: 14, margin: 0 }}>{k.item2.map((it, j) => <li key={j} style={{ fontSize: 12.5, lineHeight: 1.7, color: C.text, marginBottom: 1 }}>{it}</li>)}</ul>}
+            </div>
+          ))}
+        </div>
+      );
+    case "perbandingan":
+      return (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, margin: "12px 0 16px" }}>
+          {[blok.kiri, blok.kanan].map((sisi, i) => (
+            <div key={i} style={{ background: sisi.warna, border: `2px solid ${sisi.border}`, borderRadius: 12, padding: "14px 16px" }}>
+              <p style={{ fontWeight: 800, fontSize: 14, color: sisi.border, marginBottom: 10, textAlign: "center" }}>{sisi.judul}</p>
+              <ul style={{ paddingLeft: 16, margin: 0 }}>
+                {sisi.item.map((it, j) => <li key={j} style={{ fontSize: 13, lineHeight: 1.8, color: C.text, marginBottom: 3 }}>{it}</li>)}
+              </ul>
+            </div>
+          ))}
+        </div>
+      );
+    default:
+      return null;
+  }
+}
+
+// ============================================================
+// MAIN APP
+// ============================================================
+export default function App() {
+  const [halaman, setHalaman] = useState("beranda");
+  const [babAktif, setBabAktif] = useState("bank");
+  const [topikAktif, setTopikAktif] = useState(0);
+  const [tabMateri, setTabMateri] = useState("isi");
+  const [progres, setProgres] = useState({});
+  const [skor, setSkor] = useState(0);
+
+  // Kuis state
+  const [kuisState, setKuisState] = useState({ mulai: false, selesai: false, soalIdx: 0, dipilih: null, dijawab: false, benarCount: 0, jawaban: [] });
+
+  // Glosarium state
+  const [cariGlosarium, setCariGlosarium] = useState("");
+  const [terpilihGlosarium, setTerpilihGlosarium] = useState(null);
+
+  // Notifikasi
+  const [notif, setNotif] = useState(null);
+
+  const tandaiProgres = (bab, topik) => {
+    const k = `${bab}-${topik}`;
+    if (!progres[k]) {
+      setProgres(p => ({ ...p, [k]: true }));
+      setSkor(s => s + 10);
+      tampilNotif("✅ Topik selesai dibaca! +10 poin");
+    }
+  };
+
+  const tampilNotif = (pesan) => {
+    setNotif(pesan);
+    setTimeout(() => setNotif(null), 2800);
+  };
+
+  const totalTopik = Object.values(MATERI).reduce((a, b) => a + b.topik.length, 0);
+  const selesaiTopik = Object.keys(progres).length;
+  const pctProgres = Math.round((selesaiTopik / totalTopik) * 100);
+
+  const pctBab = (babId) => {
+    const bab = MATERI[babId];
+    const done = bab.topik.filter((_, i) => progres[`${babId}-${i}`]).length;
+    return Math.round((done / bab.topik.length) * 100);
+  };
+
+  // ---- KUIS handlers ----
+  const mulaiKuis = () => setKuisState({ mulai: true, selesai: false, soalIdx: 0, dipilih: null, dijawab: false, benarCount: 0, jawaban: [] });
+  const pilihJawaban = (idx) => { if (!kuisState.dijawab) setKuisState(s => ({ ...s, dipilih: idx, dijawab: true })); };
+  const lanjutSoal = () => {
+    const benar = kuisState.dipilih === KUIS_DATA[kuisState.soalIdx].benar;
+    const newJawaban = [...kuisState.jawaban, { benar }];
+    const newBenar = kuisState.benarCount + (benar ? 1 : 0);
+    if (kuisState.soalIdx + 1 >= KUIS_DATA.length) {
+      const poin = newBenar * 10;
+      setSkor(s => s + poin);
+      tampilNotif(`🏆 Kuis selesai! +${poin} poin`);
+      setKuisState(s => ({ ...s, selesai: true, benarCount: newBenar, jawaban: newJawaban }));
+    } else {
+      setKuisState(s => ({ ...s, soalIdx: s.soalIdx + 1, dipilih: null, dijawab: false, benarCount: newBenar, jawaban: newJawaban }));
+    }
+  };
+
+  // ---- Glosarium filter ----
+  const glosariumTampil = GLOSARIUM.filter(g =>
+    g.istilah.toLowerCase().includes(cariGlosarium.toLowerCase()) ||
+    g.def.toLowerCase().includes(cariGlosarium.toLowerCase())
+  ).sort((a, b) => a.istilah.localeCompare(b.istilah));
+
+  const s = {
+    app: { fontFamily: "'Segoe UI', Tahoma, Geneva, Verdana, sans-serif", background: C.bg, minHeight: "100vh", color: C.text },
+    header: { background: C.primary, color: C.white, padding: "0 28px", height: 60, display: "flex", alignItems: "center", justifyContent: "space-between", position: "sticky", top: 0, zIndex: 200, boxShadow: "0 2px 10px rgba(10,61,98,0.3)" },
+    logoArea: { display: "flex", alignItems: "center", gap: 10, cursor: "pointer" },
+    layout: { display: "flex", minHeight: "calc(100vh - 60px)" },
+    sidebar: { width: 210, background: C.white, borderRight: `1px solid ${C.border}`, padding: "20px 0", flexShrink: 0, position: "sticky", top: 60, height: "calc(100vh - 60px)", overflowY: "auto" },
+    navItem: (aktif) => ({ display: "flex", alignItems: "center", gap: 9, padding: "9px 18px", cursor: "pointer", fontSize: 13.5, fontWeight: aktif ? 700 : 400, color: aktif ? C.primary : C.textMuted, background: aktif ? C.primaryLight : "transparent", borderLeft: aktif ? `3px solid ${C.primary}` : "3px solid transparent", marginBottom: 2, transition: "all 0.15s", borderRadius: "0 10px 10px 0", marginRight: 10 }),
+    main: { flex: 1, padding: "28px 32px", maxWidth: 920, margin: "0 auto", width: "100%" },
+    kartu: { background: C.white, borderRadius: 14, border: `1px solid ${C.border}`, padding: 22, marginBottom: 18, boxShadow: C.cardShadow },
+    btn: (v) => ({
+      padding: v === "sm" ? "7px 14px" : "11px 22px",
+      borderRadius: 9, border: "none", cursor: "pointer", fontWeight: 600, fontSize: v === "sm" ? 12.5 : 14, fontFamily: "inherit", transition: "all 0.18s",
+      ...(v === "primary" ? { background: C.primary, color: C.white } :
+        v === "accent" ? { background: C.accent, color: C.white } :
+        v === "outline" ? { background: "transparent", color: C.primary, border: `1.5px solid ${C.primary}` } :
+        v === "green" ? { background: C.green, color: C.white } :
+        { background: C.bg, color: C.text }),
+    }),
+    progresBar: { background: C.border, borderRadius: 99, height: 8, overflow: "hidden" },
+    progresFill: (pct, warna) => ({ width: `${pct}%`, height: "100%", borderRadius: 99, background: warna || C.primary, transition: "width 0.5s ease" }),
+  };
+
+  // ============================================================
+  // BERANDA
+  // ============================================================
+  const HalamanBeranda = () => (
+    <div>
+      {/* Hero */}
+      <div style={{ background: `linear-gradient(135deg, ${C.primary} 0%, #1565A8 100%)`, borderRadius: 16, padding: "36px 40px", color: C.white, marginBottom: 24, position: "relative", overflow: "hidden" }}>
+        <div style={{ position: "absolute", top: -30, right: -30, width: 150, height: 150, borderRadius: "50%", background: "rgba(255,255,255,0.06)" }} />
+        <div style={{ position: "absolute", bottom: -40, right: 80, width: 100, height: 100, borderRadius: "50%", background: "rgba(255,255,255,0.04)" }} />
+        <p style={{ fontSize: 11, fontWeight: 600, letterSpacing: 2, opacity: 0.7, marginBottom: 6, textTransform: "uppercase" }}>SMA Al Hikmah Surabaya · Ekonomi Lanjut Kelas X</p>
+        <h1 style={{ fontSize: 26, fontWeight: 800, lineHeight: 1.3, margin: "0 0 8px" }}>Adventure of Finance 🚀<br />Lembaga Keuangan</h1>
+        <p style={{ opacity: 0.85, fontSize: 14, marginBottom: 24 }}>Multimedia Pembelajaran Interaktif · Bank & Industri Keuangan Non-Bank</p>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <button style={{ ...s.btn("accent"), padding: "12px 24px", fontSize: 14 }} onClick={() => setHalaman("materi")}>📖 Mulai Belajar</button>
+          <button style={{ ...s.btn("outline"), padding: "12px 24px", fontSize: 14, borderColor: "rgba(255,255,255,0.5)", color: C.white }} onClick={() => setHalaman("kuis")}>✍️ Kuis Langsung</button>
+        </div>
+      </div>
+
+      {/* Progres */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 22 }}>
+        <div style={s.kartu}>
+          <p style={{ fontSize: 12.5, color: C.textMuted, marginBottom: 6 }}>📈 Progres Belajarmu</p>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 10 }}>
+            <span style={{ fontSize: 32, fontWeight: 800, color: C.primary }}>{pctProgres}%</span>
+            <span style={{ fontSize: 12.5, color: C.textMuted }}>{selesaiTopik}/{totalTopik} topik</span>
+          </div>
+          <div style={s.progresBar}><div style={s.progresFill(pctProgres)} /></div>
+        </div>
+        <div style={s.kartu}>
+          <p style={{ fontSize: 12.5, color: C.textMuted, marginBottom: 6 }}>🏆 Total Poin</p>
+          <div style={{ display: "flex", alignItems: "baseline", gap: 8, marginBottom: 10 }}>
+            <span style={{ fontSize: 32, fontWeight: 800, color: C.accent }}>{skor}</span>
+            <span style={{ fontSize: 12.5, color: C.textMuted }}>poin terkumpul</span>
+          </div>
+          <div style={s.progresBar}><div style={s.progresFill(Math.min((skor / 400) * 100, 100), C.accent)} /></div>
+        </div>
+      </div>
+
+      {/* Peta Konsep / Alur Belajar */}
+      <div style={s.kartu}>
+        <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>🗺️ Peta Konsep Materi</h2>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
+          {Object.values(MATERI).map((bab, i) => (
+            <div key={bab.id} style={{ background: C.bg, border: `1.5px solid ${C.border}`, borderRadius: 12, padding: 16, cursor: "pointer", transition: "all 0.2s" }}
+              onClick={() => { setBabAktif(bab.id); setTopikAktif(0); setHalaman("materi"); }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = bab.warna; e.currentTarget.style.transform = "translateY(-2px)"; }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = C.border; e.currentTarget.style.transform = "none"; }}>
+              <div style={{ width: 42, height: 42, borderRadius: 12, background: bab.warna + "20", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, marginBottom: 10 }}>{bab.emoji}</div>
+              <span style={{ fontSize: 10.5, fontWeight: 700, color: bab.warna, textTransform: "uppercase", letterSpacing: 1 }}>Bab {i + 1}</span>
+              <h3 style={{ fontSize: 13.5, fontWeight: 700, margin: "4px 0 6px", color: C.text }}>{bab.judul}</h3>
+              <p style={{ fontSize: 12, color: C.textMuted, marginBottom: 10 }}>{bab.topik.length} topik</p>
+              <div style={s.progresBar}><div style={s.progresFill(pctBab(bab.id), bab.warna)} /></div>
+              <p style={{ fontSize: 11.5, color: bab.warna, fontWeight: 600, marginTop: 4 }}>{pctBab(bab.id)}% selesai</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Navigasi Cepat */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 14 }}>
+        <div style={{ ...s.kartu, background: "#FFF8EC", border: "1.5px solid #F4C977", cursor: "pointer" }} onClick={() => setHalaman("kuis")}
+          onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
+          onMouseLeave={e => e.currentTarget.style.transform = "none"}>
+          <p style={{ fontSize: 24, marginBottom: 6 }}>✍️</p>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: "#92400E", marginBottom: 3 }}>Zona Evaluasi</h3>
+          <p style={{ fontSize: 12.5, color: "#A16207" }}>10 soal kuis interaktif pilihan ganda</p>
+        </div>
+        <div style={{ ...s.kartu, background: "#F0FBF3", border: "1.5px solid #A7D9B2", cursor: "pointer" }} onClick={() => setHalaman("glosarium")}
+          onMouseEnter={e => e.currentTarget.style.transform = "translateY(-2px)"}
+          onMouseLeave={e => e.currentTarget.style.transform = "none"}>
+          <p style={{ fontSize: 24, marginBottom: 6 }}>📕</p>
+          <h3 style={{ fontSize: 15, fontWeight: 700, color: "#14532D", marginBottom: 3 }}>Glosarium Pintar</h3>
+          <p style={{ fontSize: 12.5, color: "#166534" }}>{GLOSARIUM.length} istilah keuangan + definisi lengkap</p>
+        </div>
+      </div>
+    </div>
+  );
+
+  // ============================================================
+  // MATERI
+  // ============================================================
+  const HalamanMateri = () => {
+    const bab = MATERI[babAktif];
+    const topik = bab.topik[topikAktif];
+
+    useEffect(() => { tandaiProgres(babAktif, topikAktif); }, [babAktif, topikAktif]);
+
+    return (
+      <div>
+        {/* Tab Bab */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 18, flexWrap: "wrap" }}>
+          {Object.values(MATERI).map(b => (
+            <button key={b.id} style={{ ...s.btn(babAktif === b.id ? "primary" : "outline"), fontSize: 13, padding: "8px 14px" }}
+              onClick={() => { setBabAktif(b.id); setTopikAktif(0); setTabMateri("isi"); }}>
+              {b.emoji} {b.judul}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ display: "flex", gap: 16, alignItems: "flex-start" }}>
+          {/* Sidebar Topik */}
+          <div style={{ ...s.kartu, width: 185, flexShrink: 0, padding: 14 }}>
+            <p style={{ fontSize: 10.5, fontWeight: 700, color: C.textMuted, textTransform: "uppercase", letterSpacing: 1, marginBottom: 10 }}>Topik</p>
+            {bab.topik.map((t, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, padding: "8px 10px", borderRadius: 8, cursor: "pointer", marginBottom: 4, fontSize: 13, fontWeight: topikAktif === i ? 700 : 400, color: topikAktif === i ? C.primary : C.text, background: topikAktif === i ? C.primaryLight : "transparent", transition: "all 0.15s" }}
+                onClick={() => { setTopikAktif(i); setTabMateri("isi"); }}>
+                {progres[`${babAktif}-${i}`]
+                  ? <span style={{ color: C.green, fontSize: 13, flexShrink: 0 }}>✓</span>
+                  : <span style={{ width: 12, height: 12, border: `2px solid ${C.border}`, borderRadius: "50%", display: "inline-block", flexShrink: 0 }} />}
+                {t.judul}
+              </div>
+            ))}
+          </div>
+
+          {/* Konten Topik */}
+          <div style={{ flex: 1 }}>
+            <div style={s.kartu}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 18 }}>
+                <span style={{ fontSize: 26 }}>{bab.emoji}</span>
+                <div>
+                  <p style={{ fontSize: 11.5, color: C.textMuted, marginBottom: 2 }}>{bab.judul}</p>
+                  <h2 style={{ fontSize: 19, fontWeight: 800, color: C.text, margin: 0 }}>{topik.judul}</h2>
+                </div>
+                {progres[`${babAktif}-${topikAktif}`] && (
+                  <span style={{ marginLeft: "auto", background: C.greenLight, color: C.green, borderRadius: 20, padding: "4px 12px", fontSize: 12, fontWeight: 700 }}>✓ Selesai</span>
+                )}
+              </div>
+
+              {/* Tab */}
+              <div style={{ display: "flex", gap: 6, marginBottom: 18, borderBottom: `1.5px solid ${C.border}`, paddingBottom: 12 }}>
+                {["isi", "ringkasan"].map(tab => (
+                  <button key={tab} style={{ ...s.btn(tabMateri === tab ? "primary" : ""), fontSize: 12.5, padding: "7px 16px" }} onClick={() => setTabMateri(tab)}>
+                    {tab === "isi" ? "📝 Materi Lengkap" : "⚡ Ringkasan Cepat"}
+                  </button>
+                ))}
+              </div>
+
+              {tabMateri === "isi" && (
+                <div>{topik.isi.map((blok, i) => <BlokkKonten key={i} blok={blok} />)}</div>
+              )}
+              {tabMateri === "ringkasan" && (
+                <div style={{ background: `linear-gradient(135deg, ${C.primaryLight}, #E8F4FF)`, borderRadius: 12, padding: 20, border: `1.5px solid ${C.primaryMid}40` }}>
+                  <p style={{ fontWeight: 700, color: C.primary, marginBottom: 8, fontSize: 12.5 }}>⚡ RINGKASAN CEPAT</p>
+                  <p style={{ fontSize: 15, color: C.text, lineHeight: 1.85, margin: 0 }}>{topik.ringkasan}</p>
+                </div>
+              )}
+            </div>
+
+            {/* Navigasi */}
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <button style={s.btn("outline")} disabled={topikAktif === 0 && babAktif === Object.keys(MATERI)[0]}
+                onClick={() => {
+                  if (topikAktif > 0) { setTopikAktif(p => p - 1); setTabMateri("isi"); }
+                  else {
+                    const babs = Object.keys(MATERI);
+                    const idx = babs.indexOf(babAktif);
+                    if (idx > 0) { setBabAktif(babs[idx - 1]); setTopikAktif(MATERI[babs[idx - 1]].topik.length - 1); setTabMateri("isi"); }
+                  }
+                }}>← Sebelumnya</button>
+              <button style={s.btn("primary")}
+                disabled={topikAktif === bab.topik.length - 1 && babAktif === Object.keys(MATERI)[Object.keys(MATERI).length - 1]}
+                onClick={() => {
+                  if (topikAktif < bab.topik.length - 1) { setTopikAktif(p => p + 1); setTabMateri("isi"); }
+                  else {
+                    const babs = Object.keys(MATERI);
+                    const idx = babs.indexOf(babAktif);
+                    if (idx < babs.length - 1) { setBabAktif(babs[idx + 1]); setTopikAktif(0); setTabMateri("isi"); }
+                  }
+                }}>Selanjutnya →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // ============================================================
+  // KUIS
+  // ============================================================
+  const HalamanKuis = () => {
+    const { mulai, selesai, soalIdx, dipilih, dijawab, benarCount, jawaban } = kuisState;
+    const soal = KUIS_DATA[soalIdx];
+
+    return (
+      <div style={s.kartu}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 22 }}>
+          <span style={{ fontSize: 30 }}>✍️</span>
+          <div>
+            <h2 style={{ fontSize: 20, fontWeight: 800, margin: 0 }}>Zona Evaluasi</h2>
+            <p style={{ fontSize: 13, color: C.textMuted, margin: 0 }}>Adventure of Finance: Lembaga Keuangan · {KUIS_DATA.length} soal</p>
+          </div>
+        </div>
+
+        {!mulai && !selesai && (
+          <div style={{ textAlign: "center", padding: "32px 0" }}>
+            <div style={{ fontSize: 64, marginBottom: 14 }}>🎯</div>
+            <h3 style={{ fontSize: 19, fontWeight: 700, marginBottom: 8 }}>Siap Menghadapi Tantangan?</h3>
+            <p style={{ color: C.textMuted, marginBottom: 6 }}>{KUIS_DATA.length} pertanyaan · Setiap jawaban benar = 10 poin</p>
+            <p style={{ color: C.textMuted, fontSize: 13, marginBottom: 24 }}>Topik: Bank Sentral, BPR, IKNB, Leasing, Fintech, Asuransi, OJK, LPS, Koperasi, Pasar Modal</p>
+            <button style={{ ...s.btn("accent"), padding: "14px 36px", fontSize: 15 }} onClick={mulaiKuis}>🚀 Mulai Kuis</button>
+          </div>
+        )}
+
+        {mulai && !selesai && (
+          <div>
+            {/* Progress bar soal */}
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+              <span style={{ background: C.primaryLight, color: C.primary, borderRadius: 20, padding: "4px 14px", fontSize: 12.5, fontWeight: 700 }}>Soal {soalIdx + 1} / {KUIS_DATA.length}</span>
+              <div style={{ display: "flex", gap: 4 }}>
+                {KUIS_DATA.map((_, i) => (
+                  <div key={i} style={{ width: 26, height: 5, borderRadius: 99, background: i < soalIdx ? C.green : i === soalIdx ? C.primary : C.border, transition: "all 0.3s" }} />
+                ))}
+              </div>
+            </div>
+
+            {/* Pertanyaan */}
+            <div style={{ background: C.primaryLight, borderLeft: `4px solid ${C.primary}`, borderRadius: 12, padding: "18px 20px", marginBottom: 18 }}>
+              <p style={{ fontSize: 15.5, fontWeight: 600, color: C.text, lineHeight: 1.75, margin: 0 }}>{soal.soal}</p>
+            </div>
+
+            {/* Pilihan */}
+            {soal.pilihan.map((p, i) => {
+              let bg = C.white, border = C.border, warna = C.text;
+              if (dijawab) {
+                if (i === soal.benar) { bg = C.greenLight; border = C.green; warna = "#14532D"; }
+                else if (i === dipilih && i !== soal.benar) { bg = C.redLight; border = C.red; warna = "#7F1D1D"; }
+              } else if (i === dipilih) { bg = C.primaryLight; border = C.primaryMid; warna = C.primary; }
+              return (
+                <div key={i} style={{ padding: "13px 18px", borderRadius: 10, border: `2px solid ${border}`, background: bg, color: warna, cursor: dijawab ? "default" : "pointer", marginBottom: 9, fontSize: 14.5, fontWeight: 500, display: "flex", alignItems: "center", gap: 12, transition: "all 0.18s" }}
+                  onClick={() => pilihJawaban(i)}>
+                  <span style={{ width: 26, height: 26, borderRadius: "50%", background: dijawab && i === soal.benar ? C.green : dijawab && i === dipilih && i !== soal.benar ? C.red : C.border, color: C.white, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 700, flexShrink: 0 }}>
+                    {dijawab ? (i === soal.benar ? "✓" : i === dipilih ? "✗" : String.fromCharCode(65 + i)) : String.fromCharCode(65 + i)}
+                  </span>
+                  {p}
+                </div>
+              );
+            })}
+
+            {/* Feedback & tombol lanjut */}
+            {dijawab && (
+              <div>
+                <div style={{ background: dipilih === soal.benar ? C.greenLight : C.redLight, border: `1.5px solid ${dipilih === soal.benar ? C.green : C.red}`, borderRadius: 10, padding: 14, marginBottom: 14 }}>
+                  <p style={{ fontWeight: 700, color: dipilih === soal.benar ? "#14532D" : "#7F1D1D", marginBottom: 4 }}>
+                    {dipilih === soal.benar ? "✅ Jawaban Benar!" : "❌ Jawaban Salah"}
+                  </p>
+                  <p style={{ fontSize: 13, color: dipilih === soal.benar ? "#166534" : "#991B1B", margin: 0 }}>💡 {soal.penjelasan}</p>
+                </div>
+                <button style={{ ...s.btn("primary"), width: "100%" }} onClick={lanjutSoal}>
+                  {soalIdx + 1 < KUIS_DATA.length ? "Soal Berikutnya →" : "Lihat Hasil 🎉"}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {selesai && (
+          <div style={{ textAlign: "center", padding: "28px 0" }}>
+            <div style={{ fontSize: 64, marginBottom: 14 }}>
+              {benarCount >= 8 ? "🏆" : benarCount >= 6 ? "⭐" : benarCount >= 4 ? "📚" : "💪"}
+            </div>
+            <h3 style={{ fontSize: 22, fontWeight: 800, marginBottom: 6 }}>
+              {benarCount >= 8 ? "Luar Biasa! Kamu Ahli Keuangan!" : benarCount >= 6 ? "Bagus! Terus Pertahankan!" : benarCount >= 4 ? "Cukup Baik, Perlu Berlatih Lagi" : "Terus Semangat Belajar!"}
+            </h3>
+            <p style={{ color: C.textMuted, marginBottom: 18, fontSize: 15 }}>
+              Skor: <strong style={{ color: C.primary }}>{benarCount}/{KUIS_DATA.length}</strong> soal benar
+            </p>
+            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+              {jawaban.map((j, i) => (
+                <div key={i} style={{ width: 42, height: 42, borderRadius: "50%", background: j.benar ? C.green : C.red, color: C.white, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: 15 }}>
+                  {j.benar ? "✓" : "✗"}
+                </div>
+              ))}
+            </div>
+            <div style={{ background: C.primaryLight, borderRadius: 12, padding: "14px 22px", marginBottom: 20, display: "inline-block" }}>
+              <p style={{ color: C.textMuted, fontSize: 12.5, marginBottom: 2 }}>Poin didapatkan</p>
+              <p style={{ fontSize: 26, fontWeight: 800, color: C.accent, margin: 0 }}>+{benarCount * 10} poin 🎉</p>
+            </div>
+            <div style={{ display: "flex", gap: 12, justifyContent: "center" }}>
+              <button style={s.btn("outline")} onClick={() => setHalaman("materi")}>📖 Ulang Materi</button>
+              <button style={s.btn("accent")} onClick={mulaiKuis}>🔁 Coba Lagi</button>
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // ============================================================
+  // GLOSARIUM
+  // ============================================================
+  const HalamanGlosarium = () => (
+    <div>
+      <div style={s.kartu}>
+        <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 4 }}>📕 Glosarium Pintar</h2>
+        <p style={{ color: C.textMuted, fontSize: 13.5, marginBottom: 16 }}>{GLOSARIUM.length} istilah penting dalam dunia keuangan – klik istilah untuk melihat definisi lengkap</p>
+        <input
+          style={{ width: "100%", padding: "11px 18px", borderRadius: 10, border: `1.5px solid ${C.border}`, fontSize: 14, outline: "none", fontFamily: "inherit", boxSizing: "border-box" }}
+          placeholder="🔍 Cari istilah keuangan..."
+          value={cariGlosarium}
+          onChange={e => { setCariGlosarium(e.target.value); setTerpilihGlosarium(null); }}
+        />
+      </div>
+
+      {terpilihGlosarium && (
+        <div style={{ ...s.kartu, background: C.primaryLight, border: `2px solid ${C.primaryMid}` }}>
+          <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+            <div>
+              <p style={{ fontWeight: 800, fontSize: 18, color: C.primary, marginBottom: 8 }}>{terpilihGlosarium.istilah}</p>
+              <p style={{ fontSize: 14.5, lineHeight: 1.8, color: C.text, margin: 0 }}>{terpilihGlosarium.def}</p>
+            </div>
+            <button style={{ background: "none", border: "none", cursor: "pointer", fontSize: 18, color: C.textMuted, flexShrink: 0, marginLeft: 10 }} onClick={() => setTerpilihGlosarium(null)}>✕</button>
+          </div>
+        </div>
+      )}
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12 }}>
+        {glosariumTampil.map((g, i) => (
+          <div key={i} style={{ ...s.kartu, padding: 16, cursor: "pointer", transition: "all 0.18s", background: terpilihGlosarium?.istilah === g.istilah ? C.primaryLight : C.white, borderColor: terpilihGlosarium?.istilah === g.istilah ? C.primaryMid : C.border }}
+            onClick={() => setTerpilihGlosarium(terpilihGlosarium?.istilah === g.istilah ? null : g)}
+            onMouseEnter={e => { if (terpilihGlosarium?.istilah !== g.istilah) e.currentTarget.style.borderColor = C.primaryMid; }}
+            onMouseLeave={e => { if (terpilihGlosarium?.istilah !== g.istilah) e.currentTarget.style.borderColor = C.border; }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "flex-start" }}>
+              <div style={{ width: 34, height: 34, borderRadius: 9, background: C.primaryLight, display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 800, fontSize: 13, color: C.primary, flexShrink: 0 }}>{g.istilah[0]}</div>
+              <div>
+                <p style={{ fontWeight: 700, fontSize: 14, color: C.text, margin: "0 0 3px" }}>{g.istilah}</p>
+                <p style={{ fontSize: 12, color: C.textMuted, margin: 0, lineHeight: 1.5 }}>{g.def.length > 70 ? g.def.slice(0, 70) + "..." : g.def}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {glosariumTampil.length === 0 && (
+        <div style={{ textAlign: "center", padding: 40, color: C.textMuted }}>
+          <p style={{ fontSize: 42, marginBottom: 10 }}>🔍</p>
+          <p>Istilah tidak ditemukan. Coba kata kunci lain.</p>
+        </div>
+      )}
+    </div>
+  );
+
+  // ============================================================
+  // TENTANG (Petunjuk)
+  // ============================================================
+  const HalamanTentang = () => (
+    <div style={s.kartu}>
+      <h2 style={{ fontSize: 19, fontWeight: 800, marginBottom: 18 }}>📋 Petunjuk Penggunaan MPI</h2>
+      {[
+        { no: "01", judul: "Belajar Materi", isi: "Kunjungi menu Materi Belajar untuk mempelajari topik Bank & IKNB secara lengkap. Ada 3 bab dan 10 topik yang tersedia. Setiap topik yang selesai dibaca akan menambah 10 poin.", icon: "📖" },
+        { no: "02", judul: "Ringkasan Cepat", isi: "Di setiap topik, klik tab Ringkasan Cepat untuk mendapatkan intisari materi dalam satu kalimat. Cocok untuk revisi cepat sebelum ujian.", icon: "⚡" },
+        { no: "03", judul: "Kuis Interaktif", isi: "Uji pemahaman di Zona Evaluasi dengan 10 soal pilihan ganda. Setiap jawaban benar bernilai 10 poin. Ada penjelasan lengkap untuk setiap soal.", icon: "✍️" },
+        { no: "04", judul: "Glosarium Pintar", isi: "Cari dan klik istilah keuangan di Glosarium untuk melihat definisi lengkap. Ada 28 istilah penting yang bisa dicari dengan fitur pencarian.", icon: "📕" },
+        { no: "05", judul: "Pantau Progres", isi: "Lihat persentase progres belajar di Dashboard. Semakin banyak topik yang dibaca dan soal yang dijawab benar, semakin tinggi poinmu!", icon: "📈" },
+      ].map((item, i) => (
+        <div key={i} style={{ display: "flex", gap: 16, marginBottom: 20, padding: "16px 18px", background: C.bg, borderRadius: 12, border: `1px solid ${C.border}` }}>
+          <div style={{ width: 44, height: 44, borderRadius: 12, background: C.primary, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 22, flexShrink: 0 }}>{item.icon}</div>
+          <div>
+            <p style={{ fontWeight: 700, color: C.primary, fontSize: 14, marginBottom: 4 }}>{item.no}. {item.judul}</p>
+            <p style={{ fontSize: 13.5, color: C.text, lineHeight: 1.75, margin: 0 }}>{item.isi}</p>
+          </div>
+        </div>
+      ))}
+      <div style={{ background: C.primaryLight, borderRadius: 12, padding: 18, border: `1.5px solid ${C.primaryMid}` }}>
+        <p style={{ fontWeight: 700, color: C.primary, marginBottom: 6 }}>📌 Informasi MPI</p>
+        <p style={{ fontSize: 13, color: C.text, margin: "0 0 4px" }}>Mata Pelajaran: Ekonomi Lanjut Kelas X · SMA Al Hikmah Surabaya</p>
+        <p style={{ fontSize: 13, color: C.text, margin: "0 0 4px" }}>Tema: "Adventure of Finance: Lembaga Keuangan"</p>
+        <p style={{ fontSize: 13, color: C.text, margin: 0 }}>Berisi: Materi Lengkap · Kuis Interaktif · Glosarium Pintar</p>
+      </div>
+    </div>
+  );
+
+  const navItems = [
+    { id: "beranda", label: "Dashboard", icon: "🏠" },
+    { id: "materi", label: "Materi Belajar", icon: "📖" },
+    { id: "kuis", label: "Zona Evaluasi", icon: "✍️" },
+    { id: "glosarium", label: "Glosarium Pintar", icon: "📕" },
+    { id: "tentang", label: "Petunjuk", icon: "ℹ️" },
+  ];
+
+  return (
+    <div style={s.app}>
+      <style>{`
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: #f1f5fb; }
+        ::-webkit-scrollbar-thumb { background: #B8CCE0; border-radius: 3px; }
+        button:disabled { opacity: 0.45; cursor: not-allowed; }
+      `}</style>
+
+      {/* Notifikasi */}
+      {notif && (
+        <div style={{ position: "fixed", top: 74, right: 22, background: C.primary, color: C.white, padding: "12px 22px", borderRadius: 12, fontSize: 13.5, fontWeight: 600, zIndex: 9999, boxShadow: "0 4px 20px rgba(10,61,98,0.25)", animation: "none" }}>
+          {notif}
+        </div>
+      )}
+
+      {/* Header */}
+      <header style={s.header}>
+        <div style={s.logoArea} onClick={() => setHalaman("beranda")}>
+          <div style={{ width: 34, height: 34, borderRadius: 9, background: C.accent, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 17 }}>⚡</div>
+          <div>
+            <div style={{ fontWeight: 800, fontSize: 15, lineHeight: 1.2 }}>Adventure of Finance</div>
+            <div style={{ fontSize: 10.5, opacity: 0.7, fontWeight: 400 }}>Lembaga Keuangan · Kelas X</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ background: C.accent, borderRadius: 18, padding: "5px 14px", fontSize: 13, fontWeight: 700, cursor: "pointer" }} onClick={() => setHalaman("beranda")}>
+            🏆 {skor} poin
+          </div>
+          <div style={{ width: 34, height: 34, borderRadius: "50%", background: C.primaryMid, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, cursor: "pointer" }}>
+            X
+          </div>
+        </div>
+      </header>
+
+      <div style={s.layout}>
+        {/* Sidebar */}
+        <nav style={s.sidebar}>
+          <div style={{ padding: "0 14px 14px", borderBottom: `1px solid ${C.border}`, marginBottom: 8 }}>
+            <p style={{ fontSize: 10.5, fontWeight: 700, color: C.textMuted, letterSpacing: 1.5, textTransform: "uppercase" }}>Menu Utama</p>
+          </div>
+          {navItems.map(item => (
+            <div key={item.id} style={s.navItem(halaman === item.id)} onClick={() => setHalaman(item.id)}>
+              <span style={{ fontSize: 16 }}>{item.icon}</span>
+              <span>{item.label}</span>
+            </div>
+          ))}
+          {/* Mini progres di sidebar */}
+          <div style={{ margin: "20px 14px 0", padding: 14, background: C.primaryLight, borderRadius: 12, border: `1px solid ${C.primaryMid}30` }}>
+            <p style={{ fontSize: 11.5, fontWeight: 600, color: C.primary, marginBottom: 6 }}>📈 Progres Belajar</p>
+            <div style={s.progresBar}><div style={s.progresFill(pctProgres)} /></div>
+            <p style={{ fontSize: 11.5, color: C.textMuted, marginTop: 5 }}>{pctProgres}% ({selesaiTopik}/{totalTopik} topik)</p>
+          </div>
+        </nav>
+
+        {/* Konten utama */}
+        <main style={s.main}>
+          {halaman === "beranda" && <HalamanBeranda />}
+          {halaman === "materi" && <HalamanMateri />}
+          {halaman === "kuis" && <HalamanKuis />}
+          {halaman === "glosarium" && <HalamanGlosarium />}
+          {halaman === "tentang" && <HalamanTentang />}
+        </main>
+      </div>
+    </div>
+  );
+}
